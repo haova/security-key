@@ -1,0 +1,10 @@
+{
+  "files.associations": {
+    "*.ejs": "html",
+    "*.wal": "html",
+    "*.wlp": "html",
+    "*.xml": "xml",
+    "stdio.h": "c",
+    "board_api.h": "c"
+  }
+}
