@@ -19,6 +19,7 @@ extern "C"
 
 // Class
 #define CFG_TUD_CDC 1 // CDC interface for stdio/serial
+#define CFG_TUD_HID 1 // Human Interface Device
 
 // Set CDC FIFO buffer sizes
 #define CFG_TUD_CDC_RX_BUFSIZE 64

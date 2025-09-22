@@ -1,26 +1,17 @@
-/**
- * Copyright (c) 2023 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
 #include <tusb.h>
 #include <bsp/board_api.h>
 
-// set some example Vendor and Product ID
-// the board will use to identify at the host
-#define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
-#define CDC_EXAMPLE_VID 0xCafe
-// use _PID_MAP to generate unique PID for each interface
-#define CDC_EXAMPLE_PID (0x4000 | _PID_MAP(CDC, 0))
-// set USB 2.0
-#define CDC_EXAMPLE_BCD 0x0200
+#include "usb_descriptors.h"
+
+#define USB_VID 0xBA0C
+#define USB_PID 0x0001
+#define USB_BCD 0x0200
 
 // defines a descriptor that will be communicated to the host
 tusb_desc_device_t const desc_device = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = CDC_EXAMPLE_BCD,
+    .bcdUSB = USB_BCD,
 
     .bDeviceClass = TUSB_CLASS_MISC,         // CDC is a subclass of misc
     .bDeviceSubClass = MISC_SUBCLASS_COMMON, // CDC uses common subclass
@@ -28,8 +19,8 @@ tusb_desc_device_t const desc_device = {
 
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE, // 64 bytes
 
-    .idVendor = CDC_EXAMPLE_VID,
-    .idProduct = CDC_EXAMPLE_PID,
+    .idVendor = USB_VID,
+    .idProduct = USB_PID,
     .bcdDevice = 0x0100, // Device release number
 
     .iManufacturer = 0x01, // Index of manufacturer string
@@ -42,20 +33,42 @@ tusb_desc_device_t const desc_device = {
 // called when host requests to get device descriptor
 uint8_t const *tud_descriptor_device_cb(void);
 
+//--------------------------------------------------------------------+
+// HID Report Descriptor
+//--------------------------------------------------------------------+
+
+uint8_t const desc_hid_report[] =
+    {
+        TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
+        TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE)),
+        TUD_HID_REPORT_DESC_CONSUMER(HID_REPORT_ID(REPORT_ID_CONSUMER_CONTROL)),
+        TUD_HID_REPORT_DESC_GAMEPAD(HID_REPORT_ID(REPORT_ID_GAMEPAD))};
+
+// Invoked when received GET HID REPORT DESCRIPTOR
+// Application return pointer to descriptor
+// Descriptor contents must exist long enough for transfer to complete
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance)
+{
+    (void)instance;
+    return desc_hid_report;
+}
+
 enum
 {
     ITF_NUM_CDC_0 = 0,
     ITF_NUM_CDC_0_DATA,
+    ITF_NUM_HID,
     ITF_NUM_TOTAL
 };
 
 // total length of configuration descriptor
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN)
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
 
 // define endpoint numbers
 #define EPNUM_CDC_0_NOTIF 0x81 // notification endpoint for CDC 0
 #define EPNUM_CDC_0_OUT 0x02   // out endpoint for CDC 0
 #define EPNUM_CDC_0_IN 0x82    // in endpoint for CDC 0
+#define EPNUM_HID 0x83
 
 // configure descriptor (for 2 CDC interfaces)
 uint8_t const desc_configuration[] = {
@@ -66,6 +79,9 @@ uint8_t const desc_configuration[] = {
     TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0, 4, EPNUM_CDC_0_NOTIF, 8, EPNUM_CDC_0_OUT, EPNUM_CDC_0_IN, 64),
     // CDC 0: Data Interface
     // TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0_DATA, 4, 0x01, 0x02),
+
+    // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5),
 };
 
 // called when host requests to get configuration descriptor
@@ -75,7 +91,7 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index);
 tusb_desc_device_qualifier_t const desc_device_qualifier = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = CDC_EXAMPLE_BCD,
+    .bcdUSB = USB_BCD,
 
     .bDeviceClass = TUSB_CLASS_CDC,
     .bDeviceSubClass = MISC_SUBCLASS_COMMON,
