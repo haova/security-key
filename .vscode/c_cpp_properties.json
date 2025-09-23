@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/firmware/build/generated/pico_base",
-                "${workspaceFolder}/firmware/pico-sdk/src/common/pico_base_headers/include"
+                "${workspaceFolder}/firmware/pico-sdk/src/common/pico_base_headers/include",
+                "${workspaceFolder}/firmware/pico-sdk/src/host/pico_platform/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

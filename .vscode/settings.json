@@ -4,6 +4,8 @@
     "*.wal": "html",
     "*.wlp": "html",
     "*.xml": "xml",
-    "cstdint": "c"
+    "cstdint": "c",
+    "usb_descriptors.h": "c",
+    "random": "c"
   }
 }

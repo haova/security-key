@@ -12,6 +12,8 @@ pico_sdk_init()
 add_executable(firmware src/main.c)
 target_sources(firmware PUBLIC
   src/main.c
+  src/hid.c
+  src/cdc.c
   src/usb_descriptors.c
 )
 
