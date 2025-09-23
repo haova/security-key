@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "*.ejs": "html",
+    "*.wal": "html",
+    "*.wlp": "html",
+    "*.xml": "xml",
+    "cstdint": "c"
+  }
+}

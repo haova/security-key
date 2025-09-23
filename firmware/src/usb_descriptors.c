@@ -1,5 +1,5 @@
-#include <tusb.h>
 #include <bsp/board_api.h>
+#include <tusb.h>
 
 #include "usb_descriptors.h"
 
@@ -33,55 +33,44 @@ tusb_desc_device_t const desc_device = {
 // called when host requests to get device descriptor
 uint8_t const *tud_descriptor_device_cb(void);
 
-//--------------------------------------------------------------------+
 // HID Report Descriptor
-//--------------------------------------------------------------------+
-
-uint8_t const desc_hid_report[] =
-    {
-        TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
-        TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE)),
-        TUD_HID_REPORT_DESC_CONSUMER(HID_REPORT_ID(REPORT_ID_CONSUMER_CONTROL)),
-        TUD_HID_REPORT_DESC_GAMEPAD(HID_REPORT_ID(REPORT_ID_GAMEPAD))};
-
-// Invoked when received GET HID REPORT DESCRIPTOR
-// Application return pointer to descriptor
-// Descriptor contents must exist long enough for transfer to complete
-uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance)
-{
-    (void)instance;
-    return desc_hid_report;
-}
-
-enum
-{
-    ITF_NUM_CDC_0 = 0,
-    ITF_NUM_CDC_0_DATA,
-    ITF_NUM_HID,
-    ITF_NUM_TOTAL
+uint8_t const desc_hid_report[] = {
+    TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD)),
 };
 
+// Invoked when received GET HID REPORT DESCRIPTOR
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
+  (void)instance;
+  return desc_hid_report;
+}
+
+// Define IFTNUM for each descriptor
+enum { ITF_NUM_CDC = 0, ITF_NUM_CDC_DATA, ITF_NUM_HID, ITF_NUM_TOTAL };
+
 // total length of configuration descriptor
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
+#define CONFIG_TOTAL_LEN                                                       \
+  (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN + TUD_HID_DESC_LEN)
 
 // define endpoint numbers
-#define EPNUM_CDC_0_NOTIF 0x81 // notification endpoint for CDC 0
-#define EPNUM_CDC_0_OUT 0x02   // out endpoint for CDC 0
-#define EPNUM_CDC_0_IN 0x82    // in endpoint for CDC 0
-#define EPNUM_HID 0x83
+#define EPNUM_CDC_NOTIF 0x81 // notification endpoint for CDC
+#define EPNUM_CDC_OUT 0x02   // out endpoint for CDC
+#define EPNUM_CDC_IN 0x82    // in endpoint for CDC
 
-// configure descriptor (for 2 CDC interfaces)
+#define EPNUM_HID_IN 0x83
+#define EPNUM_HID_INTERVAL 10 // 10ms
+
+// configure descriptor
 uint8_t const desc_configuration[] = {
-    // config descriptor | how much power in mA, count of interfaces, ...
+    // config descriptor
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN, 0x80, 100),
 
-    // CDC 0: Communication Interface - TODO: get 64 from tusb_config.h
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0, 4, EPNUM_CDC_0_NOTIF, 8, EPNUM_CDC_0_OUT, EPNUM_CDC_0_IN, 64),
-    // CDC 0: Data Interface
-    // TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0_DATA, 4, 0x01, 0x02),
-
-    // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 5),
+    // CDC
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT,
+                       EPNUM_CDC_IN, CFG_TUD_CDC_EP_BUFSIZE),
+    // HID
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 0, HID_ITF_PROTOCOL_NONE,
+                       sizeof(desc_hid_report), EPNUM_HID_IN,
+                       CFG_TUD_HID_EP_BUFSIZE, EPNUM_HID_INTERVAL),
 };
 
 // called when host requests to get configuration descriptor
@@ -106,13 +95,12 @@ uint8_t const *tud_descriptor_device_qualifier_cb(void);
 
 // String descriptors referenced with .i... in the descriptor tables
 
-enum
-{
-    STRID_LANGID = 0,   // 0: supported language ID
-    STRID_MANUFACTURER, // 1: Manufacturer
-    STRID_PRODUCT,      // 2: Product
-    STRID_SERIAL,       // 3: Serials
-    STRID_CDC_0,        // 4: CDC Interface 0
+enum {
+  STRID_LANGID = 0,   // 0: supported language ID
+  STRID_MANUFACTURER, // 1: Manufacturer
+  STRID_PRODUCT,      // 2: Product
+  STRID_SERIAL,       // 3: Serials
+  STRID_CDC,          // 4: CDC Interface 0
 };
 
 // array of pointer to string descriptors
@@ -121,11 +109,12 @@ char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04}, // 0: supported language is English (0x0409)
     "HaoVA",                    // 1: Manufacturer
     "Security Key",             // 2: Product
-    NULL,                       // 3: Serials (null so it uses unique ID if available)
-    "Pico SDK stdio"            // 4: CDC Interface 0
+    NULL,            // 3: Serials (null so it uses unique ID if available)
+    "Pico SDK stdio" // 4: CDC Interface 0
 };
 
-// buffer to hold the string descriptor during the request | plus 1 for the null terminator
+// buffer to hold the string descriptor during the request | plus 1 for the null
+// terminator
 static uint16_t _desc_str[32 + 1];
 
 // called when host request to get string descriptor
@@ -135,74 +124,64 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid);
 // IMPLEMENTATION
 // --------------------------------------------------------------------+
 
-uint8_t const *tud_descriptor_device_cb(void)
-{
-    return (uint8_t const *)&desc_device;
+uint8_t const *tud_descriptor_device_cb(void) {
+  return (uint8_t const *)&desc_device;
 }
 
-uint8_t const *tud_descriptor_device_qualifier_cb(void)
-{
-    return (uint8_t const *)&desc_device_qualifier;
+uint8_t const *tud_descriptor_device_qualifier_cb(void) {
+  return (uint8_t const *)&desc_device_qualifier;
 }
 
-uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
-{
-    // avoid unused parameter warning and keep function signature consistent
-    (void)index;
+uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
+  // avoid unused parameter warning and keep function signature consistent
+  (void)index;
 
-    return desc_configuration;
+  return desc_configuration;
 }
 
-uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
-{
-    // TODO: check lang id
-    (void)langid;
-    size_t char_count;
+uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
+  // TODO: check lang id
+  (void)langid;
+  size_t char_count;
 
+  // Determine which string descriptor to return
+  switch (index) {
+  case STRID_LANGID:
+    memcpy(&_desc_str[1], string_desc_arr[STRID_LANGID], 2);
+    char_count = 1;
+    break;
+
+  case STRID_SERIAL:
+    // try to read the serial from the board
+    char_count = board_usb_get_serial(_desc_str + 1, 32);
+    break;
+
+  default:
     // Determine which string descriptor to return
-    switch (index)
-    {
-    case STRID_LANGID:
-        memcpy(&_desc_str[1], string_desc_arr[STRID_LANGID], 2);
-        char_count = 1;
-        break;
-
-    case STRID_SERIAL:
-        // try to read the serial from the board
-        char_count = board_usb_get_serial(_desc_str + 1, 32);
-        break;
-
-    default:
-        // COPYRIGHT NOTE: Based on TinyUSB example
-        // Windows wants utf16le
-
-        // Determine which string descriptor to return
-        if (!(index < sizeof(string_desc_arr) / sizeof(string_desc_arr[0])))
-        {
-            return NULL;
-        }
-
-        // Copy string descriptor into _desc_str
-        const char *str = string_desc_arr[index];
-
-        char_count = strlen(str);
-        size_t const max_count = sizeof(_desc_str) / sizeof(_desc_str[0]) - 1; // -1 for string type
-        // Cap at max char
-        if (char_count > max_count)
-        {
-            char_count = max_count;
-        }
-
-        // Convert ASCII string into UTF-16
-        for (size_t i = 0; i < char_count; i++)
-        {
-            _desc_str[1 + i] = str[i];
-        }
-        break;
+    if (!(index < sizeof(string_desc_arr) / sizeof(string_desc_arr[0]))) {
+      return NULL;
     }
 
-    // First byte is the length (including header), second byte is string type
-    _desc_str[0] = (uint16_t)((TUSB_DESC_STRING << 8) | (char_count * 2 + 2));
+    // Copy string descriptor into _desc_str
+    const char *str = string_desc_arr[index];
 
-    return _desc_str;
+    char_count = strlen(str);
+    size_t const max_count =
+        sizeof(_desc_str) / sizeof(_desc_str[0]) - 1; // -1 for string type
+    // Cap at max char
+    if (char_count > max_count) {
+      char_count = max_count;
+    }
+
+    // Convert ASCII string into UTF-16
+    for (size_t i = 0; i < char_count; i++) {
+      _desc_str[1 + i] = str[i];
+    }
+    break;
+  }
+
+  // First byte is the length (including header), second byte is string type
+  _desc_str[0] = (uint16_t)((TUSB_DESC_STRING << 8) | (char_count * 2 + 2));
+
+  return _desc_str;
 }
