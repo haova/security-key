@@ -1,4 +1,5 @@
 #include <bsp/board_api.h>
+#include <hardware/gpio.h>
 #include <pico/stdio.h>
 #include <stdlib.h>
 #include <tusb.h>
@@ -6,25 +7,36 @@
 #include "hid.h"
 #include "usb_descriptors.h"
 
-void custom_task() {
-  static bool bootsel_pressed = false;
-  uint32_t const btn = board_button_read();
+#define MAX_GPIO 64
+
+const uint BOOTSEL_PIN = MAX_GPIO - 1;
+const uint BTN_PIN = 29;
+
+static bool gpio_states[MAX_GPIO] = {false};
+
+// return if button was pressed (just one)
+bool btn_read(const uint pin) {
+  bool state = false;
+
+  if (pin == BOOTSEL_PIN) {
+    state = board_button_read() != 0;
+  } else {
+    state = gpio_get(pin);
+  }
 
   // relesed
-  if (!btn) {
-    bootsel_pressed = false;
-    return;
+  if (!state) {
+    gpio_states[pin] = false;
+    return false;
   }
 
   // holding button
-  if (btn && bootsel_pressed)
-    return;
+  if (state && gpio_states[pin])
+    return false;
 
   // pressed
-  bootsel_pressed = true;
-
-  // do something
-  hid_type_string("Hello, World!\n");
+  gpio_states[pin] = true;
+  return true;
 }
 
 int main(void) {
@@ -40,6 +52,9 @@ int main(void) {
   // let pico sdk use the first cdc interface for std io
   stdio_init_all();
 
+  // GPIO
+  gpio_init(BTN_PIN);
+
   // main run loop
   while (1) {
     // TinyUSB device task | must be called regurlarly
@@ -49,7 +64,9 @@ int main(void) {
     hid_task();
 
     // custom task
-    custom_task();
+    if (btn_read(BTN_PIN)) {
+      hid_type_string("Hello, World!");
+    }
   }
 
   // indicate no error

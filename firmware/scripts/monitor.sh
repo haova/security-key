@@ -8,5 +8,5 @@ else
   echo "Using port: $PORT (exit by type: Ctrl+a, / (not Ctrl+/))"
   sleep 1
   ./picotool/build/picotool info
-  screen /dev/ttyACM0 # exit by type: Ctrl+a, / (not Ctrl+/)
+  screen "$PORT" # exit by type: Ctrl+a, / (not Ctrl+/)
 fi

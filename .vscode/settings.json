@@ -6,6 +6,8 @@
     "*.xml": "xml",
     "cstdint": "c",
     "usb_descriptors.h": "c",
-    "random": "c"
+    "random": "c",
+    "stdio.h": "c",
+    "board_api.h": "c"
   }
 }
