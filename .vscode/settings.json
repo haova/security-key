@@ -8,6 +8,16 @@
     "usb_descriptors.h": "c",
     "random": "c",
     "stdio.h": "c",
-    "board_api.h": "c"
+    "board_api.h": "c",
+    "stdio_usb.h": "c",
+    "flash.h": "c",
+    "array": "c",
+    "string": "c",
+    "string_view": "c",
+    "ranges": "c",
+    "span": "c",
+    "format": "c",
+    "irq.h": "c",
+    "charconv": "c"
   }
 }

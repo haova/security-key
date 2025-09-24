@@ -18,6 +18,11 @@ Development scripts for Raspberry Pi Pico security key project.
 4. Upload to device: `./scripts/upload.sh`
 5. Monitor output: `./scripts/monitor.sh`
 
+## Serial Commands
+
+- `MKEY <master-key>`
+- `SKEY <standby-key>`
+
 ## Author
 
 HaoVA.

@@ -15,6 +15,8 @@ target_sources(firmware PUBLIC
   src/hid.c
   src/cdc.c
   src/usb_descriptors.c
+  src/storage.c
+  src/debug.c
 )
 
 # Make sure TinyUSB can find tusb_config.h

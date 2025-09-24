@@ -5,6 +5,7 @@
 #include <tusb.h>
 
 #include "hid.h"
+#include "storage.h"
 #include "usb_descriptors.h"
 
 #define MAX_GPIO 64
@@ -65,7 +66,10 @@ int main(void) {
 
     // custom task
     if (btn_read(BTN_PIN)) {
-      hid_type_string("Hello, World!");
+      const char *msg = flash_read_string(SKEY_BLOCK);
+
+      printf("Typing: %s\n", msg);
+      hid_type_string(msg);
     }
   }
 
